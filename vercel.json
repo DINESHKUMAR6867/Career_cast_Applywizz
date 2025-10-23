@@ -1,5 +1,6 @@
 {
   "version": 2,
+  "trailingSlash": false,
   "builds": [
     {
       "src": "career_cast/wsgi.py",
@@ -15,6 +16,10 @@
     }
   ],
   "routes": [
+    {
+      "src": "/(.*)/",
+      "dest": "/$1"
+    },
     {
       "src": "/static/(.*)",
       "dest": "/staticfiles/$1"
