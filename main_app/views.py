@@ -361,38 +361,100 @@ from django.shortcuts import render, redirect
 from django.contrib import messages
 from .models import CareerCast
 
+# @login_required
+# def create_cast_step2(request):
+#     career_cast_id = request.session.get('current_cast_id')
+#     if not career_cast_id:
+#         return redirect('create_cast_step1')
+    
+#     career_cast = get_object_or_404(CareerCast, id=career_cast_id, user=request.user)
+    
+#     if request.method == 'POST':
+#         resume_file = request.FILES.get('resume_file')
+#         if resume_file:
+#             allowed_extensions = ['.pdf', '.doc', '.docx', '.txt']
+#             file_extension = os.path.splitext(resume_file.name)[1].lower()
+            
+#             if file_extension not in allowed_extensions:
+#                 messages.error(request, 'Please upload a PDF, DOC, DOCX, or TXT file.')
+#                 return render(request, 'main_app/step2_resume.html', {'career_cast': career_cast})
+            
+#             if resume_file.size > 5 * 1024 * 1024:
+#                 messages.error(request, 'File size too large. Please upload a file smaller than 5MB.')
+#                 return render(request, 'main_app/step2_resume.html', {'career_cast': career_cast})
+            
+#             # ✅ Just save the file — don't generate text here
+#             career_cast.resume_file = resume_file
+#             career_cast.teleprompter_text = ""  # clear any stale text
+#             career_cast.save()
+
+#             return redirect('create_cast_step3')
+#         else:
+#             messages.error(request, 'Please upload a resume file')
+    
+#     return render(request, 'main_app/step2_resume.html', {'career_cast': career_cast})
+
+import os
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib import messages
+from django.contrib.auth.decorators import login_required
+from supabase import create_client
+
+from .models import CareerCast
+
+# ✅ Initialize Supabase client using your environment vars
+SUPABASE_URL = os.getenv("SUPABASE_URL")
+SUPABASE_KEY = os.getenv("SUPABASE_KEY")
+supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
+
 @login_required
 def create_cast_step2(request):
     career_cast_id = request.session.get('current_cast_id')
     if not career_cast_id:
         return redirect('create_cast_step1')
-    
+
     career_cast = get_object_or_404(CareerCast, id=career_cast_id, user=request.user)
-    
+
     if request.method == 'POST':
         resume_file = request.FILES.get('resume_file')
-        if resume_file:
-            allowed_extensions = ['.pdf', '.doc', '.docx', '.txt']
-            file_extension = os.path.splitext(resume_file.name)[1].lower()
-            
-            if file_extension not in allowed_extensions:
-                messages.error(request, 'Please upload a PDF, DOC, DOCX, or TXT file.')
-                return render(request, 'main_app/step2_resume.html', {'career_cast': career_cast})
-            
-            if resume_file.size > 5 * 1024 * 1024:
-                messages.error(request, 'File size too large. Please upload a file smaller than 5MB.')
-                return render(request, 'main_app/step2_resume.html', {'career_cast': career_cast})
-            
-            # ✅ Just save the file — don't generate text here
-            career_cast.resume_file = resume_file
-            career_cast.teleprompter_text = ""  # clear any stale text
+        if not resume_file:
+            messages.error(request, 'Please upload a resume file')
+            return render(request, 'main_app/step2_resume.html', {'career_cast': career_cast})
+
+        allowed_extensions = ['.pdf', '.doc', '.docx', '.txt']
+        file_extension = os.path.splitext(resume_file.name)[1].lower()
+
+        if file_extension not in allowed_extensions:
+            messages.error(request, 'Please upload a PDF, DOC, DOCX, or TXT file.')
+            return render(request, 'main_app/step2_resume.html', {'career_cast': career_cast})
+
+        if resume_file.size > 5 * 1024 * 1024:
+            messages.error(request, 'File size too large. Please upload a file smaller than 5MB.')
+            return render(request, 'main_app/step2_resume.html', {'career_cast': career_cast})
+
+        # ✅ Read file bytes for upload
+        file_bytes = resume_file.read()
+        file_path = f"{request.user.id}/{resume_file.name}"
+
+        try:
+            # Upload file to your Supabase Storage bucket (e.g., 'career_cast_media')
+            supabase.storage.from_("career_cast_media").upload(file_path, file_bytes)
+
+            # Get public URL for storage reference
+            public_url = supabase.storage.from_("career_cast_media").get_public_url(file_path)
+
+            # Save the Supabase file URL in your database
+            career_cast.resume_file = public_url
+            career_cast.teleprompter_text = ""
             career_cast.save()
 
             return redirect('create_cast_step3')
-        else:
-            messages.error(request, 'Please upload a resume file')
-    
+
+        except Exception as e:
+            messages.error(request, f"Upload failed: {e}")
+
     return render(request, 'main_app/step2_resume.html', {'career_cast': career_cast})
+
 
 
 

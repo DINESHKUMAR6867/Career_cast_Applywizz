@@ -119,6 +119,16 @@ OUTLOOK_CLIENT_ID = os.getenv("OUTLOOK_CLIENT_ID")
 OUTLOOK_CLIENT_SECRET = os.getenv("OUTLOOK_CLIENT_SECRET")
 OUTLOOK_SENDER_EMAIL = os.getenv("OUTLOOK_SENDER_EMAIL")
 
+# --- Supabase Storage Setup ---
+import supabase
+SUPABASE_URL = os.getenv("SUPABASE_URL")
+SUPABASE_KEY = os.getenv("SUPABASE_KEY")
+supabase_client = supabase.create_client(SUPABASE_URL, SUPABASE_KEY)
+
+# Instead of writing to /media, we’ll upload files to a 'career_cast_media' bucket
+MEDIA_BACKEND = "supabase"
+
+
 # --- Whitenoise (for Vercel) ---
 MIDDLEWARE.insert(1, "whitenoise.middleware.WhiteNoiseMiddleware")
 STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
