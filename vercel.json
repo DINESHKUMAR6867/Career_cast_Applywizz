@@ -1,20 +1,12 @@
 {
   "version": 2,
-  "env": {
-    "VERCEL": "true"
-  },
-  "build": {
-    "env": {
-      "DJANGO_SETTINGS_MODULE": "career_cast.settings"
-    }
-  },
   "builds": [
     {
       "src": "career_cast/wsgi.py",
       "use": "@vercel/python",
       "config": {
-        "maxLambdaSize": "15mb",
-        "runtime": "python3.11"
+        "runtime": "python3.11",
+        "maxLambdaSize": "15mb"
       }
     }
   ],
@@ -25,11 +17,15 @@
     },
     {
       "src": "/media/(.*)",
-      "dest": "/tmp/media/$1"
+      "dest": "/media/$1"
     },
     {
       "src": "/(.*)",
       "dest": "career_cast/wsgi.py"
     }
-  ]
+  ],
+  "env": {
+    "DJANGO_SETTINGS_MODULE": "career_cast.settings",
+    "PYTHONUNBUFFERED": "1"
+  }
 }
