@@ -3,6 +3,11 @@
   "env": {
     "VERCEL": "true"
   },
+  "build": {
+    "env": {
+      "DJANGO_SETTINGS_MODULE": "career_cast.settings"
+    }
+  },
   "builds": [
     {
       "src": "career_cast/wsgi.py",
