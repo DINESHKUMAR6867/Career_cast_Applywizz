@@ -6,27 +6,37 @@ from PyPDF2 import PdfReader
 
 openai.api_key = settings.OPENAI_API_KEY  # store in settings not hardcoded
 
-def extract_text_from_resume(resume_file):
-    """Extract text from PDF, DOCX, or TXT resume."""
-    filename = resume_file.name.lower()
+import requests
+from PyPDF2 import PdfReader
+from io import BytesIO
 
-    if filename.endswith('.txt'):
-        return resume_file.read().decode('utf-8')
+def extract_text_from_resume(file_url):
+    """
+    Extracts text from a resume (supports Supabase Storage public URLs or local file paths).
+    """
+    try:
+        if file_url.startswith("http"):
+            # ✅ Download file directly from Supabase
+            response = requests.get(file_url)
+            response.raise_for_status()
+            file_stream = BytesIO(response.content)
+        else:
+            # Local development fallback
+            file_stream = open(file_url, "rb")
 
-    elif filename.endswith('.pdf'):
-        reader = PdfReader(BytesIO(resume_file.read()))
+        # ✅ Handle PDF (you can extend this for DOCX/TXT later)
+        reader = PdfReader(file_stream)
         text = ""
         for page in reader.pages:
             text += page.extract_text() or ""
-        return text
 
-    elif filename.endswith('.docx'):
-        doc = Document(BytesIO(resume_file.read()))
-        text = "\n".join([p.text for p in doc.paragraphs])
-        return text
+        file_stream.close()
+        return text.strip()
 
-    else:
-        raise ValueError("Unsupported file format. Please upload PDF, DOCX, or TXT.")
+    except Exception as e:
+        print("Error extracting resume text:", e)
+        return ""
+
 
 
 # def generate_teleprompter_text(job_title, job_description, resume_text):
