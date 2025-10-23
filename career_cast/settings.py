@@ -147,8 +147,12 @@ STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]
 # This is where `collectstatic` will gather all static files for production
 STATIC_ROOT = BASE_DIR / "staticfiles"
 
+# Configure Media files for Vercel's temporary storage
 MEDIA_URL = '/media/'
-MEDIA_ROOT = BASE_DIR / 'media'
+if DEBUG:
+    MEDIA_ROOT = BASE_DIR / 'media'
+else:
+    MEDIA_ROOT = '/tmp/media'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # settings.py
 
