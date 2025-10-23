@@ -636,88 +636,63 @@ from django.conf import settings
 
 # Make sure you have these in your settings.py (or .env)
 supabase = create_client(settings.SUPABASE_URL, settings.SUPABASE_KEY)
-
+@csrf_exempt
 @login_required
 def video_upload(request):
-    """Upload video to Supabase Storage (works on Vercel)"""
     if request.method == "POST" and request.FILES.get("video"):
         try:
-            # Get CareerCast record
-            career_cast_id = (
-                request.POST.get("career_cast_id")
-                or request.session.get("current_cast_id")
-            )
-            if not career_cast_id:
-                return JsonResponse(
-                    {"status": "error", "message": "No CareerCast found"}, status=400
-                )
+            print("✅ Step 1: Got video file")
+            career_cast_id = request.POST.get("career_cast_id") or request.session.get("current_cast_id")
+            print("CareerCast ID:", career_cast_id)
 
-            career_cast = get_object_or_404(
-                CareerCast, id=career_cast_id, user=request.user
-            )
+            if not career_cast_id:
+                return JsonResponse({"status": "error", "message": "No CareerCast found"}, status=400)
+
+            career_cast = get_object_or_404(CareerCast, id=career_cast_id, user=request.user)
             video_file = request.FILES["video"]
 
-            # ✅ Check file type
+            # Checks
+            print("✅ Step 2: File received:", video_file.name, video_file.size)
             allowed_extensions = [".webm", ".mp4", ".mov", ".avi"]
             file_extension = os.path.splitext(video_file.name)[1].lower()
             if file_extension not in allowed_extensions:
-                return JsonResponse(
-                    {
-                        "status": "error",
-                        "message": "Invalid video format. Please use WebM, MP4, MOV, or AVI.",
-                    },
-                    status=400,
-                )
+                return JsonResponse({"status": "error", "message": "Invalid format"}, status=400)
 
-            # ✅ Check file size (50 MB limit)
             if video_file.size > 50 * 1024 * 1024:
-                return JsonResponse(
-                    {
-                        "status": "error",
-                        "message": "File size too large. Please upload a video smaller than 50 MB.",
-                    },
-                    status=400,
-                )
+                return JsonResponse({"status": "error", "message": "File too large"}, status=400)
 
-            # ✅ Sanitize filename and build path
+            print("✅ Step 3: Passed validation")
+
+            # Sanitize
             safe_name = re.sub(r"[^\w\-.]", "_", video_file.name)
             file_path = f"{career_cast.id}/{datetime.now().strftime('%Y%m%d_%H%M%S')}_{safe_name}"
 
-            # ✅ Upload directly to Supabase Storage
+            print("✅ Step 4: Uploading to Supabase:", file_path)
             file_bytes = video_file.read()
             response = supabase.storage.from_("career_cast_media").upload(file_path, file_bytes)
+            print("Supabase upload response:", response)
 
-            # If upload fails
-            if not response or getattr(response, "status_code", None) not in (200, 201, None):
-                return JsonResponse(
-                    {
-                        "status": "error",
-                        "message": f"Upload failed: {getattr(response, 'error', 'Unknown error')}",
-                    },
-                    status=500,
-                )
+            # Check response
+            if hasattr(response, "error") and response.error:
+                return JsonResponse({"status": "error", "message": str(response.error)}, status=500)
 
-            # ✅ Get public URL
+            # Get public URL
             public_url = supabase.storage.from_("career_cast_media").get_public_url(file_path)
+            print("✅ Step 5: Public URL:", public_url)
 
-            # ✅ Save URL in database
+            # Save
             career_cast.video_file = public_url
             career_cast.save()
+            print("✅ Step 6: Saved successfully")
 
-            return JsonResponse(
-                {
-                    "status": "success",
-                    "message": "Video uploaded successfully.",
-                    "video_url": public_url,
-                }
-            )
+            return JsonResponse({"status": "success", "video_url": public_url, "cast_id": career_cast.id})
 
         except Exception as e:
+            print("❌ Exception during upload:", str(e))
             return JsonResponse({"status": "error", "message": str(e)}, status=500)
 
-    return JsonResponse(
-        {"status": "error", "message": "No video file received."}, status=400
-    )
+    return JsonResponse({"status": "error", "message": "No video file received"}, status=400)
+
 
 
 
