@@ -564,12 +564,85 @@ def record_view(request):
 #     return JsonResponse({'status': 'error', 'message': 'No video file received'}, status=400)
 
 
+# @login_required
+# def video_upload(request):
+#     """Handle video upload after recording"""
+#     if request.method == "POST" and request.FILES.get("video"):
+#         try:
+#             # accept from POST or session
+#             career_cast_id = (
+#                 request.POST.get("career_cast_id")
+#                 or request.session.get("current_cast_id")
+#             )
+#             if not career_cast_id:
+#                 return JsonResponse(
+#                     {"status": "error", "message": "No CareerCast found"}, status=400
+#                 )
+
+#             career_cast = get_object_or_404(
+#                 CareerCast, id=career_cast_id, user=request.user
+#             )
+#             video_file = request.FILES["video"]
+
+#             # Check file type
+#             allowed_extensions = [".webm", ".mp4", ".mov", ".avi"]
+#             file_extension = os.path.splitext(video_file.name)[1].lower()
+#             if file_extension not in allowed_extensions:
+#                 return JsonResponse(
+#                     {
+#                         "status": "error",
+#                         "message": "Invalid video format. Please use WebM, MP4, MOV, or AVI.",
+#                     },
+#                     status=400,
+#                 )
+
+#             # Check file size (50 MB limit)
+#             if video_file.size > 50 * 1024 * 1024:
+#                 return JsonResponse(
+#                     {
+#                         "status": "error",
+#                         "message": "File size too large. Please upload a video smaller than 50 MB.",
+#                     },
+#                     status=400,
+#                 )
+
+#             # Save the uploaded file
+#             career_cast.video_file = video_file
+#             career_cast.save()
+
+#             return JsonResponse(
+#                 {
+#                     "status": "success",
+#                     "message": "Video uploaded successfully",
+#                     "cast_id": career_cast.id,
+#                 }
+#             )
+
+#         except Exception as e:
+#             return JsonResponse({"status": "error", "message": str(e)}, status=500)
+
+#     return JsonResponse(
+#         {"status": "error", "message": "No video file received"}, status=400
+#     )
+
+import os
+import re
+from datetime import datetime
+from django.http import JsonResponse
+from django.contrib.auth.decorators import login_required
+from django.shortcuts import get_object_or_404
+from supabase import create_client
+from django.conf import settings
+
+# Make sure you have these in your settings.py (or .env)
+supabase = create_client(settings.SUPABASE_URL, settings.SUPABASE_KEY)
+
 @login_required
 def video_upload(request):
-    """Handle video upload after recording"""
+    """Upload video to Supabase Storage (works on Vercel)"""
     if request.method == "POST" and request.FILES.get("video"):
         try:
-            # accept from POST or session
+            # Get CareerCast record
             career_cast_id = (
                 request.POST.get("career_cast_id")
                 or request.session.get("current_cast_id")
@@ -584,7 +657,7 @@ def video_upload(request):
             )
             video_file = request.FILES["video"]
 
-            # Check file type
+            # ✅ Check file type
             allowed_extensions = [".webm", ".mp4", ".mov", ".avi"]
             file_extension = os.path.splitext(video_file.name)[1].lower()
             if file_extension not in allowed_extensions:
@@ -596,7 +669,7 @@ def video_upload(request):
                     status=400,
                 )
 
-            # Check file size (50 MB limit)
+            # ✅ Check file size (50 MB limit)
             if video_file.size > 50 * 1024 * 1024:
                 return JsonResponse(
                     {
@@ -606,15 +679,36 @@ def video_upload(request):
                     status=400,
                 )
 
-            # Save the uploaded file
-            career_cast.video_file = video_file
+            # ✅ Sanitize filename and build path
+            safe_name = re.sub(r"[^\w\-.]", "_", video_file.name)
+            file_path = f"{career_cast.id}/{datetime.now().strftime('%Y%m%d_%H%M%S')}_{safe_name}"
+
+            # ✅ Upload directly to Supabase Storage
+            file_bytes = video_file.read()
+            response = supabase.storage.from_("career_cast_media").upload(file_path, file_bytes)
+
+            # If upload fails
+            if not response or getattr(response, "status_code", None) not in (200, 201, None):
+                return JsonResponse(
+                    {
+                        "status": "error",
+                        "message": f"Upload failed: {getattr(response, 'error', 'Unknown error')}",
+                    },
+                    status=500,
+                )
+
+            # ✅ Get public URL
+            public_url = supabase.storage.from_("career_cast_media").get_public_url(file_path)
+
+            # ✅ Save URL in database
+            career_cast.video_file = public_url
             career_cast.save()
 
             return JsonResponse(
                 {
                     "status": "success",
-                    "message": "Video uploaded successfully",
-                    "cast_id": career_cast.id,
+                    "message": "Video uploaded successfully.",
+                    "video_url": public_url,
                 }
             )
 
@@ -622,8 +716,9 @@ def video_upload(request):
             return JsonResponse({"status": "error", "message": str(e)}, status=500)
 
     return JsonResponse(
-        {"status": "error", "message": "No video file received"}, status=400
+        {"status": "error", "message": "No video file received."}, status=400
     )
+
 
 
 from django.views.decorators.clickjacking import xframe_options_exempt
