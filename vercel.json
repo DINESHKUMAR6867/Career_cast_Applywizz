@@ -2,30 +2,40 @@
   "version": 2,
   "builds": [
     {
-      "src": "career_cast/wsgi.py",
+      "src": "manage.py",
       "use": "@vercel/python",
-      "config": {
-        "runtime": "python3.11",
-        "maxLambdaSize": "15mb"
-      }
+      "config": { "maxLambdaSize": "50mb", "runtime": "python3.11" }
+    },
+    {
+      "src": "career_cast/wsgi.py",
+      "use": "@vercel/python"
+    },
+    {
+      "src": "static/**/*",
+      "use": "@vercel/static"
     }
   ],
   "routes": [
     {
       "src": "/static/(.*)",
-      "dest": "/staticfiles/$1"
-    },
-    {
-      "src": "/media/(.*)",
-      "dest": "/media/$1"
+      "dest": "/static/$1"
     },
     {
       "src": "/(.*)",
-      "dest": "career_cast/wsgi.py"
+      "dest": "manage.py"
     }
   ],
   "env": {
-    "DJANGO_SETTINGS_MODULE": "career_cast.settings",
-    "PYTHONUNBUFFERED": "1"
+  "SUPABASE_URL": "@supabase_url",
+  "SUPABASE_KEY": "@supabase_key",
+  "OPENAI_API_KEY": "@openai_api_key",
+  "DJANGO_SETTINGS_MODULE": "career_cast.settings",
+  "PYTHONUNBUFFERED": "1",
+  "TMPDIR": "/tmp"
+},
+  "functions": {
+    "api/**/*.py": {
+      "maxDuration": 30
+    }
   }
 }

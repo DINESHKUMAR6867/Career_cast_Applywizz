@@ -107,7 +107,7 @@ def rewrite_teleprompter(request, cast_id):
     if request.method != 'POST':
         return JsonResponse({'error': 'Invalid request method'}, status=400)
 
-    career_cast = get_object_or_404(CareerCast, id=cast_id, user=request.user)
+    career_cast = json_store.get_cast
 
     try:
         # Re-extract and regenerate
@@ -119,7 +119,7 @@ def rewrite_teleprompter(request, cast_id):
         )
 
         career_cast.teleprompter_text = new_text
-        career_cast.save()
+        career_castjson_store.update_cast()
 
         return JsonResponse({'success': True, 'teleprompter_text': new_text})
     except Exception as e:
@@ -153,68 +153,102 @@ from .models import CustomUser
 from django.http import HttpResponseRedirect
 from django.contrib.auth.forms import AuthenticationForm
 
-def auth_page(request):
-    """Authentication page for OTP login and signup"""
-    if request.user.is_authenticated:
-        return redirect('dashboard')  # If already authenticated, redirect to dashboard
+# def auth_page(request):
+#     """Authentication page for OTP login and signup"""
+#     if request.user.is_authenticated:
+#         return redirect('dashboard')  # If already authenticated, redirect to dashboard
         
-    if request.method == 'POST':
-        if 'signup' in request.POST:
-            # Handle signup logic
-            email = request.POST.get('email')
-            first_name = request.POST.get('first_name')
-            last_name = request.POST.get('last_name')
-            password1 = request.POST.get('password1')
-            password2 = request.POST.get('password2')
+#     if request.method == 'POST':
+#         if 'signup' in request.POST:
+#             # Handle signup logic
+#             email = request.POST.get('email')
+#             first_name = request.POST.get('first_name')
+#             last_name = request.POST.get('last_name')
+#             password1 = request.POST.get('password1')
+#             password2 = request.POST.get('password2')
 
-            # Validate passwords
-            if password1 != password2:
-                messages.error(request, 'Passwords do not match.')
-                return redirect('auth')
+#             # Validate passwords
+#             if password1 != password2:
+#                 messages.error(request, 'Passwords do not match.')
+#                 return redirect('auth')
 
-            # Check if the email already exists
-            if CustomUser.objects.filter(email=email).exists():
-                messages.error(request, 'Email already in use.')
-                return redirect('auth')
+#             # Check if the email already exists
+#             if CustomUser.objects.filter(email=email).exists():
+#                 messages.error(request, 'Email already in use.')
+#                 return redirect('auth')
 
-            # Create user
-            user = CustomUser.objects.create_user(
-                username=email.split('@')[0],  # Can generate username based on email
-                email=email,
-                password=password1,
-                first_name=first_name,
-                last_name=last_name
-            )
-            user.save()
+#             # Create user
+#             user = json_store.create_user(
+#                 username=email.split('@')[0],  # Can generate username based on email
+#                 email=email,
+#                 password=password1,
+#                 first_name=first_name,
+#                 last_name=last_name
+#             )
+#             userjson_store.update_cast()
 
-            # Send OTP and proceed as before (if needed)
-            otp_code = generate_otp()
-            user.otp = otp_code
-            user.otp_created_at = timezone.now()
-            user.save()
-            send_otp_email(email, otp_code)
+#             # Send OTP and proceed as before (if needed)
+#             otp_code = generate_otp()
+#             user.otp = otp_code
+#             user.otp_created_at = timezone.now()
+#             userjson_store.update_cast()
+#             send_otp_email(email, otp_code)
 
-            request.session['email_for_verification'] = email
-            messages.success(request, f'OTP sent to {email}')
-            return redirect('verify_otp')
+#             request.session['email_for_verification'] = email
+#             messages.success(request, f'OTP sent to {email}')
+#             return redirect('verify_otp')
 
-        if 'login' in request.POST:
-            # Handle login logic (email + password)
-            email = request.POST.get('email')
-            password = request.POST.get('password')
+#         if 'login' in request.POST:
+#             # Handle login logic (email + password)
+#             email = request.POST.get('email')
+#             password = request.POST.get('password')
 
-            # Authenticate using email and password (now handled by custom backend)
-            user = authenticate(request, email=email, password=password)
+#             # Authenticate using email and password (now handled by custom backend)
+#             user = authenticate(request, email=email, password=password)
 
-            if user is not None:
-                login(request, user)
+#             if user is not None:
+#                 login(request, user)
 
-                # Directly redirect to dashboard after login
-                return redirect('dashboard')
+#                 # Directly redirect to dashboard after login
+#                 return redirect('dashboard')
+#             else:
+#                 messages.error(request, 'Invalid email or password.')
+
+#     return render(request, 'main_app/auth.html')
+from .json_store import create_user, get_user
+import hashlib
+
+def auth_page(request):
+    """Signup / Login using JSON instead of DB"""
+    if request.session.get("user_id"):
+        return redirect("/dashboard/")
+
+    if request.method == "POST":
+        email = request.POST.get("email")
+        password = request.POST.get("password")
+        first_name = request.POST.get("first_name", "")
+        last_name = request.POST.get("last_name", "")
+
+        hashed = hashlib.sha256(password.encode()).hexdigest()
+
+        if "signup" in request.POST:
+            if get_user(email):
+                messages.error(request, "Email already exists.")
+                return redirect("/auth/")
+            user_id = create_user(email, first_name, last_name, hashed)
+            request.session["user_id"] = user_id
+            messages.success(request, "Signup successful! Redirecting…")
+            return redirect("/dashboard/")
+
+        elif "login" in request.POST:
+            user = get_user(email, hashed)
+            if user:
+                request.session["user_id"] = user["id"]
+                return redirect("/dashboard/")
             else:
-                messages.error(request, 'Invalid email or password.')
+                messages.error(request, "Invalid credentials.")
+    return render(request, "main_app/auth.html")
 
-    return render(request, 'main_app/auth.html')
 
 
 from django.contrib.auth import login
@@ -262,7 +296,7 @@ def verify_otp(request):
                     user.otp = None
                     user.otp_created_at = None
                     user.is_verified = True
-                    user.save()
+                    userjson_store.update_cast()
                     
                     # Log user in
                     login(request, user, backend='main_app.backends.EmailBackend')
@@ -309,23 +343,34 @@ def login_page(request):
     return render(request, 'main_app/login.html')
 
 
+# @login_required
+# def dashboard(request):
+#     """User dashboard view"""
+#     try:
+#         # Ensure that you're querying with the user instance
+#         career_casts = CareerCast.objects.filter(user=request.user).order_by('-created_at')
+
+#         profile_initials = request.user.get_profile_initials()
+
+#         return render(request, 'main_app/dashboard.html', {
+#             'career_casts': career_casts,
+#             'profile_initials': profile_initials
+#         })
+#     except Exception as e:
+#         print(f"Error fetching career casts: {e}")
+#         return redirect('landing')  # Fallback if there's an error
+#   # Fallback if there's an error
+
+from .json_store import get_user_casts
+
 @login_required
 def dashboard(request):
-    """User dashboard view"""
-    try:
-        # Ensure that you're querying with the user instance
-        career_casts = CareerCast.objects.filter(user=request.user).order_by('-created_at')
+    user_id = request.session.get("user_id")
+    if not user_id:
+        return redirect("/auth/")
+    casts = get_user_casts(user_id)
+    return render(request, "main_app/dashboard.html", {"career_casts": casts})
 
-        profile_initials = request.user.get_profile_initials()
-
-        return render(request, 'main_app/dashboard.html', {
-            'career_casts': career_casts,
-            'profile_initials': profile_initials
-        })
-    except Exception as e:
-        print(f"Error fetching career casts: {e}")
-        return redirect('landing')  # Fallback if there's an error
-  # Fallback if there's an error
 
 
 
@@ -335,26 +380,43 @@ from django.contrib import messages
 from .models import CareerCast
 from django.utils import timezone
 
-def create_cast_step1(request):
-    """Step 1: Create career cast - job details"""
-    if request.method == 'POST':
-        job_title = request.POST.get('job_title')
-        job_description = request.POST.get('job_description')
+# def create_cast_step1(request):
+#     """Step 1: Create career cast - job details"""
+#     if request.method == 'POST':
+#         job_title = request.POST.get('job_title')
+#         job_description = request.POST.get('job_description')
         
-        if job_title and job_description:
-            # Create CareerCast with teleprompter_text field
-            career_cast = CareerCast.objects.create(
-                user=request.user,
-                job_title=job_title,
-                job_description=job_description,
-                teleprompter_text=""  # Set initial empty value or leave it blank
-            )
-            request.session['current_cast_id'] = str(career_cast.id)
-            return redirect('create_cast_step2')
-        else:
-            messages.error(request, 'Please fill in all fields')
+#         if job_title and job_description:
+#             # Create CareerCast with teleprompter_text field
+#             career_cast = json_store.add_cast(
+#                 user=request.user,
+#                 job_title=job_title,
+#                 job_description=job_description,
+#                 teleprompter_text=""  # Set initial empty value or leave it blank
+#             )
+#             user_id = request.session.get("user_id")
+#             return redirect('create_cast_step2')
+#         else:
+#             messages.error(request, 'Please fill in all fields')
     
-    return render(request, 'main_app/step1_job.html')
+#     return render(request, 'main_app/step1_job.html')
+# # 
+from .json_store import add_cast
+
+def create_cast_step1(request):
+    user_id = request.session.get("user_id")
+    if not user_id:
+        return redirect("/auth/")
+
+    if request.method == "POST":
+        job_title = request.POST.get("job_title")
+        job_description = request.POST.get("job_description")
+        if job_title and job_description:
+            cast_id = add_cast(user_id, job_title, job_description)
+            request.session["current_cast_id"] = cast_id
+            return redirect("/create-cast/step2/")
+        messages.error(request, "Please fill in all fields.")
+    return render(request, "main_app/step1_job.html")
 
 
 from django.shortcuts import render, redirect
@@ -386,7 +448,7 @@ from .models import CareerCast
 #             # ✅ Just save the file — don't generate text here
 #             career_cast.resume_file = resume_file
 #             career_cast.teleprompter_text = ""  # clear any stale text
-#             career_cast.save()
+#             career_castjson_store.update_cast()
 
 #             return redirect('create_cast_step3')
 #         else:
@@ -407,53 +469,88 @@ SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY")
 supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 
+# @login_required
+# def create_cast_step2(request):
+#     career_cast_id = request.session.get('current_cast_id')
+#     if not career_cast_id:
+#         return redirect('create_cast_step1')
+
+#     career_cast = get_object_or_404(CareerCast, id=career_cast_id, user=request.user)
+
+#     if request.method == 'POST':
+#         resume_file = request.FILES.get('resume_file')
+#         if not resume_file:
+#             messages.error(request, 'Please upload a resume file')
+#             return render(request, 'main_app/step2_resume.html', {'career_cast': career_cast})
+
+#         allowed_extensions = ['.pdf', '.doc', '.docx', '.txt']
+#         file_extension = os.path.splitext(resume_file.name)[1].lower()
+
+#         if file_extension not in allowed_extensions:
+#             messages.error(request, 'Please upload a PDF, DOC, DOCX, or TXT file.')
+#             return render(request, 'main_app/step2_resume.html', {'career_cast': career_cast})
+
+#         if resume_file.size > 5 * 1024 * 1024:
+#             messages.error(request, 'File size too large. Please upload a file smaller than 5MB.')
+#             return render(request, 'main_app/step2_resume.html', {'career_cast': career_cast})
+
+#         # ✅ Read file bytes for upload
+#         file_bytes = resume_file.read()
+#         file_path = f"{request.user.id}/{resume_file.name}"
+
+#         try:
+#             # Upload file to your Supabase Storage bucket (e.g., 'career_cast_media')
+#             supabase.storage.from_("career_cast_media").upload(file_path, file_bytes)
+
+#             # Get public URL for storage reference
+#             public_url = supabase.storage.from_("career_cast_media").get_public_url(file_path)
+
+#             # Save the Supabase file URL in your database
+#             career_cast.resume_file = public_url
+#             career_cast.teleprompter_text = ""
+#             career_castjson_store.update_cast()
+
+#             return redirect('create_cast_step3')
+
+#         except Exception as e:
+#             messages.error(request, f"Upload failed: {e}")
+
+#     return render(request, 'main_app/step2_resume.html', {'career_cast': career_cast})
+
+from .json_store import update_cast, get_cast
+from .utils import extract_text_from_resume, generate_teleprompter_text
+from supabase import create_client
+
+SUPABASE_URL = os.getenv("SUPABASE_URL")
+SUPABASE_KEY = os.getenv("SUPABASE_KEY")
+supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
+
 @login_required
 def create_cast_step2(request):
-    career_cast_id = request.session.get('current_cast_id')
-    if not career_cast_id:
-        return redirect('create_cast_step1')
+    cast_id = request.session.get("current_cast_id")
+    if not cast_id:
+        return redirect("/create-cast/step1/")
+    cast = get_cast(cast_id)
+    if not cast:
+        return redirect("/dashboard/")
 
-    career_cast = get_object_or_404(CareerCast, id=career_cast_id, user=request.user)
+    if request.method == "POST":
+        resume = request.FILES.get("resume_file")
+        if not resume:
+            messages.error(request, "Please upload a resume.")
+            return render(request, "main_app/step2_resume.html", {"cast": cast})
 
-    if request.method == 'POST':
-        resume_file = request.FILES.get('resume_file')
-        if not resume_file:
-            messages.error(request, 'Please upload a resume file')
-            return render(request, 'main_app/step2_resume.html', {'career_cast': career_cast})
+        file_bytes = resume.read()
+        file_path = f"{cast_id}/{resume.name}"
+        supabase.storage.from_("career_cast_media").upload(file_path, file_bytes)
+        public_url = supabase.storage.from_("career_cast_media").get_public_url(file_path)
 
-        allowed_extensions = ['.pdf', '.doc', '.docx', '.txt']
-        file_extension = os.path.splitext(resume_file.name)[1].lower()
+        resume_text = extract_text_from_resume(public_url)
+        tele = generate_teleprompter_text(cast["job_title"], cast["job_description"], resume_text)
+        update_cast(cast_id, {"resume_url": public_url, "teleprompter_text": tele})
+        return redirect("/create-cast/step3/")
 
-        if file_extension not in allowed_extensions:
-            messages.error(request, 'Please upload a PDF, DOC, DOCX, or TXT file.')
-            return render(request, 'main_app/step2_resume.html', {'career_cast': career_cast})
-
-        if resume_file.size > 5 * 1024 * 1024:
-            messages.error(request, 'File size too large. Please upload a file smaller than 5MB.')
-            return render(request, 'main_app/step2_resume.html', {'career_cast': career_cast})
-
-        # ✅ Read file bytes for upload
-        file_bytes = resume_file.read()
-        file_path = f"{request.user.id}/{resume_file.name}"
-
-        try:
-            # Upload file to your Supabase Storage bucket (e.g., 'career_cast_media')
-            supabase.storage.from_("career_cast_media").upload(file_path, file_bytes)
-
-            # Get public URL for storage reference
-            public_url = supabase.storage.from_("career_cast_media").get_public_url(file_path)
-
-            # Save the Supabase file URL in your database
-            career_cast.resume_file = public_url
-            career_cast.teleprompter_text = ""
-            career_cast.save()
-
-            return redirect('create_cast_step3')
-
-        except Exception as e:
-            messages.error(request, f"Upload failed: {e}")
-
-    return render(request, 'main_app/step2_resume.html', {'career_cast': career_cast})
+    return render(request, "main_app/step2_resume.html", {"cast": cast})
 
 
 
@@ -494,7 +591,7 @@ def create_cast_step3(request):
                 resume_content
             )
             career_cast.teleprompter_text = teleprompter_text
-            career_cast.save()
+            career_castjson_store.update_cast()
         else:
             teleprompter_text = career_cast.teleprompter_text
 
@@ -550,7 +647,7 @@ def record_view(request):
             
 #             # Save the video file (using the model's upload_to path)
 #             career_cast.video_file = video_file
-#             career_cast.save()
+#             career_castjson_store.update_cast()
             
 #             return JsonResponse({
 #                 'status': 'success', 
@@ -608,7 +705,7 @@ def record_view(request):
 
 #             # Save the uploaded file
 #             career_cast.video_file = video_file
-#             career_cast.save()
+#             career_castjson_store.update_cast()
 
 #             return JsonResponse(
 #                 {
@@ -636,61 +733,79 @@ from django.conf import settings
 
 # Make sure you have these in your settings.py (or .env)
 supabase = create_client(settings.SUPABASE_URL, settings.SUPABASE_KEY)
+# @csrf_exempt
+# @login_required
+# def video_upload(request):
+#     if request.method == "POST" and request.FILES.get("video"):
+#         try:
+#             print("✅ Step 1: Got video file")
+#             career_cast_id = request.POST.get("career_cast_id") or request.session.get("current_cast_id")
+#             print("CareerCast ID:", career_cast_id)
+
+#             if not career_cast_id:
+#                 return JsonResponse({"status": "error", "message": "No CareerCast found"}, status=400)
+
+#             career_cast = get_object_or_404(CareerCast, id=career_cast_id, user=request.user)
+#             video_file = request.FILES["video"]
+
+#             # Checks
+#             print("✅ Step 2: File received:", video_file.name, video_file.size)
+#             allowed_extensions = [".webm", ".mp4", ".mov", ".avi"]
+#             file_extension = os.path.splitext(video_file.name)[1].lower()
+#             if file_extension not in allowed_extensions:
+#                 return JsonResponse({"status": "error", "message": "Invalid format"}, status=400)
+
+#             if video_file.size > 50 * 1024 * 1024:
+#                 return JsonResponse({"status": "error", "message": "File too large"}, status=400)
+
+#             print("✅ Step 3: Passed validation")
+
+#             # Sanitize
+#             safe_name = re.sub(r"[^\w\-.]", "_", video_file.name)
+#             file_path = f"{career_cast.id}/{datetime.now().strftime('%Y%m%d_%H%M%S')}_{safe_name}"
+
+#             print("✅ Step 4: Uploading to Supabase:", file_path)
+#             file_bytes = video_file.read()
+#             response = supabase.storage.from_("career_cast_media").upload(file_path, file_bytes)
+#             print("Supabase upload response:", response)
+
+#             # Check response
+#             if hasattr(response, "error") and response.error:
+#                 return JsonResponse({"status": "error", "message": str(response.error)}, status=500)
+
+#             # Get public URL
+#             public_url = supabase.storage.from_("career_cast_media").get_public_url(file_path)
+#             print("✅ Step 5: Public URL:", public_url)
+
+#             # Save
+#             career_cast.video_file = public_url
+#             career_castjson_store.update_cast()
+#             print("✅ Step 6: Saved successfully")
+
+#             return JsonResponse({"status": "success", "video_url": public_url, "cast_id": career_cast.id})
+
+#         except Exception as e:
+#             print("❌ Exception during upload:", str(e))
+#             return JsonResponse({"status": "error", "message": str(e)}, status=500)
+
+#     return JsonResponse({"status": "error", "message": "No video file received"}, status=400)
+
 @csrf_exempt
 @login_required
 def video_upload(request):
     if request.method == "POST" and request.FILES.get("video"):
-        try:
-            print("✅ Step 1: Got video file")
-            career_cast_id = request.POST.get("career_cast_id") or request.session.get("current_cast_id")
-            print("CareerCast ID:", career_cast_id)
+        cast_id = request.session.get("current_cast_id")
+        if not cast_id:
+            return JsonResponse({"status": "error", "message": "No active cast."}, status=400)
 
-            if not career_cast_id:
-                return JsonResponse({"status": "error", "message": "No CareerCast found"}, status=400)
-
-            career_cast = get_object_or_404(CareerCast, id=career_cast_id, user=request.user)
-            video_file = request.FILES["video"]
-
-            # Checks
-            print("✅ Step 2: File received:", video_file.name, video_file.size)
-            allowed_extensions = [".webm", ".mp4", ".mov", ".avi"]
-            file_extension = os.path.splitext(video_file.name)[1].lower()
-            if file_extension not in allowed_extensions:
-                return JsonResponse({"status": "error", "message": "Invalid format"}, status=400)
-
-            if video_file.size > 50 * 1024 * 1024:
-                return JsonResponse({"status": "error", "message": "File too large"}, status=400)
-
-            print("✅ Step 3: Passed validation")
-
-            # Sanitize
-            safe_name = re.sub(r"[^\w\-.]", "_", video_file.name)
-            file_path = f"{career_cast.id}/{datetime.now().strftime('%Y%m%d_%H%M%S')}_{safe_name}"
-
-            print("✅ Step 4: Uploading to Supabase:", file_path)
-            file_bytes = video_file.read()
-            response = supabase.storage.from_("career_cast_media").upload(file_path, file_bytes)
-            print("Supabase upload response:", response)
-
-            # Check response
-            if hasattr(response, "error") and response.error:
-                return JsonResponse({"status": "error", "message": str(response.error)}, status=500)
-
-            # Get public URL
-            public_url = supabase.storage.from_("career_cast_media").get_public_url(file_path)
-            print("✅ Step 5: Public URL:", public_url)
-
-            # Save
-            career_cast.video_file = public_url
-            career_cast.save()
-            print("✅ Step 6: Saved successfully")
-
-            return JsonResponse({"status": "success", "video_url": public_url, "cast_id": career_cast.id})
-
-        except Exception as e:
-            print("❌ Exception during upload:", str(e))
-            return JsonResponse({"status": "error", "message": str(e)}, status=500)
-
+        video = request.FILES["video"]
+        file_bytes = video.read()
+        safe_name = re.sub(r"[^\w\-.]", "_", video.name)
+        file_path = f"{cast_id}/{safe_name}"
+        supabase.storage.from_("career_cast_media").upload(file_path, file_bytes)
+        public_url = supabase.storage.from_("career_cast_media").get_public_url(file_path)
+        update_cast(cast_id, {"video_url": public_url})
+        return JsonResponse({"status": "success", "video_url": public_url})
     return JsonResponse({"status": "error", "message": "No video file received"}, status=400)
 
 
@@ -699,13 +814,23 @@ def video_upload(request):
 from django.views.decorators.clickjacking import xframe_options_exempt
 from django.http import HttpResponse
 
+# @xframe_options_exempt
+# @login_required
+# def final_result(request, cast_id):
+#     """Display the final result with resume and video"""
+#     career_cast = json_store.get_cast
+#     print(f"Resume File URL: {career_cast.resume_file.url}")  # Debugging line
+#     return render(request, 'main_app/final_result.html', {'career_cast': career_cast})
+
 @xframe_options_exempt
 @login_required
 def final_result(request, cast_id):
-    """Display the final result with resume and video"""
-    career_cast = get_object_or_404(CareerCast, id=cast_id, user=request.user)
-    print(f"Resume File URL: {career_cast.resume_file.url}")  # Debugging line
-    return render(request, 'main_app/final_result.html', {'career_cast': career_cast})
+    cast = get_cast(cast_id)
+    if not cast:
+        messages.error(request, "No such record.")
+        return redirect("/dashboard/")
+    return render(request, "main_app/final_result.html", {"cast": cast})
+
 
 # from django.http import FileResponse
 # from django.shortcuts import get_object_or_404
@@ -716,7 +841,7 @@ def final_result(request, cast_id):
 # @login_required
 # def final_result(request, cast_id):
 #     """Display the final result with resume and video"""
-#     career_cast = get_object_or_404(CareerCast, id=cast_id, user=request.user)
+#     career_cast = json_store.get_cast
     
 #     # Serve the resume file directly using FileResponse
 #     if career_cast.resume_file:
@@ -734,7 +859,7 @@ def final_result(request, cast_id):
 @login_required
 def download_resume(request, cast_id):
     """Download the resume file"""
-    career_cast = get_object_or_404(CareerCast, id=cast_id, user=request.user)
+    career_cast = json_store.get_cast
     if career_cast.resume_file:
         response = HttpResponse(career_cast.resume_file, content_type='application/octet-stream')
         response['Content-Disposition'] = f'attachment; filename="{career_cast.resume_file.name}"'
@@ -746,7 +871,7 @@ def download_resume(request, cast_id):
 @login_required
 def view_video(request, cast_id):
     """View the uploaded video"""
-    career_cast = get_object_or_404(CareerCast, id=cast_id, user=request.user)
+    career_cast = json_store.get_cast
     if career_cast.video_file:
         response = HttpResponse(career_cast.video_file, content_type='video/mp4')
         response['Content-Disposition'] = f'inline; filename="{career_cast.video_file.name}"'
@@ -780,7 +905,7 @@ def download_enhanced_resume(request, cast_id):
     print(f"User: {request.user}")
     
     try:
-        career_cast = get_object_or_404(CareerCast, id=cast_id, user=request.user)
+        career_cast = json_store.get_cast
         print(f"CareerCast found: {career_cast.id}")
         
         if not career_cast.resume_file:
@@ -948,7 +1073,7 @@ def add_play_video_button_to_pdf_with_image(original_pdf_path, original_filename
             # Fallback to programmatic button
             return add_play_video_button_programmatic(original_pdf_path, original_filename, final_result_url)
         
-        c.save()
+        c.json_store.update_cast()
         
         # Merge with original PDF
         print("Merging button with original PDF...")
@@ -1082,7 +1207,7 @@ def add_play_video_button_programmatic(original_pdf_path, original_filename, fin
         text_y = y_pos + (button_height - 7) / 2 + 4
         c.drawString(text_x, text_y, "Play Video")
         
-        c.save()
+        cjson_store.update_cast()
         
         # Merge with original PDF
         packet.seek(0)
