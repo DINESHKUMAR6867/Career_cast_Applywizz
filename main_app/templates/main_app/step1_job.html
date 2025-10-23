@@ -1,0 +1,290 @@
+{% extends 'main_app/base.html' %}
+{% load static %}
+
+{% block content %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create New Career Cast - Step 1</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        body {
+            background-color: #f5f7fa;
+            color: #333;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .form-container {
+            background-color: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            width: 100%;
+            max-width: 600px;
+            padding: 40px;
+        }
+        .step-indicator {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 30px;
+            position: relative;
+        }
+        .step-indicator::before {
+            content: '';
+            position: absolute;
+            top: 15px;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background-color: #e0e0e0;
+            z-index: 1;
+        }
+        .step {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+            z-index: 2;
+        }
+        .step-circle {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background-color: #e0e0e0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #888;
+        }
+        .step.active .step-circle {
+            background-color: #4a6cf7;
+            color: white;
+        }
+        .step-label {
+            font-size: 12px;
+            color: #888;
+            font-weight: 500;
+        }
+        .step.active .step-label {
+            color: #4a6cf7;
+        }
+        h1 {
+            font-size: 24px;
+            margin-bottom: 30px;
+            color: #2d3748;
+            font-weight: 600;
+        }
+        .form-group {
+            margin-bottom: 24px;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #4a5568;
+        }
+        input, textarea {
+            width: 100%;
+            padding: 12px 16px;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        input:focus, textarea:focus {
+            outline: none;
+            border-color: #4a6cf7;
+            box-shadow: 0 0 0 3px rgba(74, 108, 247, 0.1);
+        }
+        textarea {
+            min-height: 120px;
+            resize: vertical;
+        }
+        .example-text {
+            font-size: 14px;
+            color: #718096;
+            margin-top: 4px;
+        }
+        .button-group {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 40px;
+        }
+        button {
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background-color 0.2s, transform 0.1s;
+        }
+        button:active {
+            transform: translateY(1px);
+        }
+        .btn-back {
+            background-color: transparent;
+            border: 1px solid #e2e8f0;
+            color: #4a5568;
+        }
+        .btn-back:hover {
+            background-color: #f7fafc;
+        }
+        .btn-next {
+            background-color: #4a6cf7;
+            border: none;
+            color: white;
+        }
+        .btn-next:hover {
+            background-color: #3a5ce5;
+        }
+        .btn-next:disabled {
+            background-color: #a0aec0;
+            cursor: not-allowed;
+        }
+
+        /* Messages styling */
+        .messages-container {
+            margin-bottom: 20px;
+        }
+        
+        .alert {
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            border: 1px solid transparent;
+        }
+        
+        .alert-error {
+            border-color: #e53e3e;
+            background-color: #fed7d7;
+            color: #c53030;
+        }
+        
+        .alert-success {
+            border-color: #38a169;
+            background-color: #c6f6d5;
+            color: #276749;
+        }
+    </style>
+</head>
+<body>
+    <div class="form-container">
+        <!-- Messages -->
+        {% if messages %}
+        <div class="messages-container">
+            {% for message in messages %}
+            <div class="alert alert-{{ message.tags }}">
+                {{ message }}
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <div class="step-indicator">
+            <div class="step active">
+                <div class="step-circle">1</div>
+                <div class="step-label">Job Details</div>
+            </div>
+            <div class="step">
+                <div class="step-circle">2</div>
+                <div class="step-label">Upload Resume</div>
+            </div>
+            <div class="step">
+                <div class="step-circle">3</div>
+                <div class="step-label">Record Video</div>
+            </div>
+        </div>
+        
+        <h1>Job Details</h1>
+        
+        <!-- ✅ Use proper POST form to send data to backend -->
+        <form id="career-cast-form" method="POST">
+            {% csrf_token %}
+            <div class="form-group">
+                <label for="job-title">Job Title *</label>
+                <input type="text" id="job-title" name="job_title" placeholder="e.g., Senior Software Engineer" required
+                       value="{% if request.POST.job_title %}{{ request.POST.job_title }}{% endif %}">
+                <div class="example-text">Enter the official title for this position</div>
+            </div>
+            
+            <div class="form-group">
+                <label for="role-description">Job Description *</label>
+                <textarea id="role-description" name="job_description" placeholder="Describe the responsibilities, required skills, and qualifications for this position..." required>{% if request.POST.job_description %}{{ request.POST.job_description }}{% endif %}</textarea>
+                <div class="example-text">Be specific about what makes this role unique and what you're looking for in candidates</div>
+            </div>
+            
+            <div class="button-group">
+                <button type="button" class="btn-back" id="back-btn" onclick="window.location.href='{% url 'dashboard' %}'">
+    Back
+</button>
+
+                <button type="submit" class="btn-next" id="next-btn">Next Step →</button>
+            </div>
+        </form>
+    </div>
+
+    <script>
+        // Form validation
+        document.getElementById('career-cast-form').addEventListener('submit', function(e) {
+            const jobTitle = document.getElementById('job-title').value.trim();
+            const jobDescription = document.getElementById('role-description').value.trim();
+            
+            if (!jobTitle || !jobDescription) {
+                e.preventDefault();
+                alert('Please fill in all required fields.');
+                return;
+            }
+            
+            // Show loading state
+            const nextBtn = document.getElementById('next-btn');
+            nextBtn.disabled = true;
+            nextBtn.textContent = 'Processing...';
+        });
+
+        // Auto-hide messages after 5 seconds
+        setTimeout(() => {
+            const messages = document.querySelectorAll('.alert');
+            messages.forEach(message => {
+                message.style.opacity = '0';
+                message.style.transition = 'opacity 0.5s ease';
+                setTimeout(() => message.remove(), 500);
+            });
+        }, 5000);
+
+        // Auto-save form data to localStorage (optional)
+        document.getElementById('job-title').addEventListener('input', function() {
+            localStorage.setItem('careerCast_jobTitle', this.value);
+        });
+        
+        document.getElementById('role-description').addEventListener('input', function() {
+            localStorage.setItem('careerCast_jobDescription', this.value);
+        });
+
+        // Load saved data if exists
+        document.addEventListener('DOMContentLoaded', function() {
+            const savedTitle = localStorage.getItem('careerCast_jobTitle');
+            const savedDescription = localStorage.getItem('careerCast_jobDescription');
+            
+            if (savedTitle && !document.getElementById('job-title').value) {
+                document.getElementById('job-title').value = savedTitle;
+            }
+            
+            if (savedDescription && !document.getElementById('role-description').value) {
+                document.getElementById('role-description').value = savedDescription;
+            }
+        });
+    </script>
+</body>
+</html>
+{% endblock %}

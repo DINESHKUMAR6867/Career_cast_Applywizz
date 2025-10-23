@@ -1,0 +1,282 @@
+{% extends 'main_app/base.html' %}
+
+{% block content %}
+<style>
+    /* Card & Form Styling */
+    .step-card {
+        background-color: #ffffff;
+        border: 1px solid #dee2e6;
+        box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.05);
+        border-radius: 12px;
+    }
+    .form-control {
+        border-color: #ced4da;
+        transition: all 0.2s ease;
+    }
+    .form-control:focus {
+        border-color: #007bff;
+        box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+    }
+    .form-label {
+        color: #343a40 !important;
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+    }
+    .form-text, .text-muted {
+        color: #6c757d !important;
+    }
+    .step-card h1, .step-card h2 { color: #212529 !important; }
+    .step-card p, .step-card label { color: #6c757d !important; }
+
+    /* Tabs */
+    .nav-pills .nav-link {
+        color: #6c757d !important;
+        background-color: #f8f9fa;
+        border: 1px solid #dee2e6;
+        font-weight: 600;
+        transition: all 0.3s ease;
+    }
+    .nav-pills .nav-link.active, .nav-pills .nav-link:hover {
+        color: white !important;
+        background-color: #007bff;
+        border-color: #007bff;
+    }
+    .nav-pills .nav-link.active {
+        box-shadow: 0 0.125rem 0.25rem rgba(0, 123, 255, 0.25);
+    }
+
+    /* Password wrapper & icon positioning */
+    .password-wrapper {
+        position: relative;
+    }
+
+    .password-input-container {
+        position: relative;
+    }
+
+    .password-wrapper .form-control {
+        padding-right: 2.75rem; /* Space for the eye icon */
+    }
+
+    .password-toggle {
+        position: absolute;
+        top: 50%;
+        right: 0.75rem;
+        transform: translateY(-50%);
+        cursor: pointer;
+        color: #6c757d;
+        font-size: 1.15rem;
+        line-height: 1;
+        height: 1.5rem;
+        width: 1.5rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        transition: all 0.2s ease;
+        z-index: 5;
+        background: transparent;
+        border: none;
+        outline: none;
+    }
+
+    /* Button styling */
+    .btn-primary {
+        background: linear-gradient(135deg, #007bff, #0056b3);
+        border: none;
+        transition: all 0.3s ease;
+    }
+
+    .btn-primary:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(0, 123, 255, 0.3);
+    }
+
+    /* Animation for tab switching */
+    .tab-pane {
+        animation: fadeIn 0.3s ease;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 576px) {
+        .container.py-5 {
+            padding-top: 1rem !important;
+            padding-bottom: 1rem !important;
+        }
+        
+        .p-5 {
+            padding: 2rem 1.5rem !important;
+        }
+        
+        .password-wrapper .form-control {
+            padding-right: 2.5rem;
+        }
+        
+        .password-toggle {
+            right: 0.5rem;
+        }
+    }
+</style>
+
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="p-5 step-card">
+                <div class="text-center mb-5">
+                    <h1 class="text-dark fw-bold">
+                        <i class="fas fa-video me-2 text-primary"></i>CareerCast
+                    </h1>
+                    <p class="text-secondary">
+                        Join thousands of professionals getting their dream jobs
+                    </p>
+                </div>
+
+                <!-- Tabs -->
+                <ul class="nav nav-pills nav-justified mb-4" id="authTab" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="login-tab" data-bs-toggle="tab" data-bs-target="#login" type="button" role="tab">
+                            <i class="fas fa-sign-in-alt me-2"></i>Login
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="signup-tab" data-bs-toggle="tab" data-bs-target="#signup" type="button" role="tab">
+                            <i class="fas fa-user-plus me-2"></i>Sign Up
+                        </button>
+                    </li>
+                </ul>
+
+                <div class="tab-content" id="authTabContent">
+                    <!-- LOGIN TAB -->
+                    <div class="tab-pane fade show active" id="login" role="tabpanel" aria-labelledby="login-tab">
+                        <form method="POST" action="{% url 'auth' %}">
+                            {% csrf_token %}
+                            <input type="hidden" name="login" value="true">
+
+                            <div class="mb-3">
+                                <label class="form-label">Email Address</label>
+                                <input type="email" name="email" class="form-control form-control-lg" placeholder="Enter your email" required>
+                            </div>
+
+                            <div class="mb-4 password-wrapper">
+                                <label class="form-label">Password</label>
+                                <div class="password-input-container">
+                                    <input type="password" name="password" class="form-control form-control-lg password-field" placeholder="Enter your password" required>
+                                    <button type="button" class="password-toggle" aria-label="Toggle password visibility">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <button type="submit" class="btn btn-primary w-100 py-2 fw-bold btn-lg">
+                                Sign In <i class="fas fa-arrow-right ms-2"></i>
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- SIGNUP TAB -->
+                    <div class="tab-pane fade" id="signup" role="tabpanel" aria-labelledby="signup-tab">
+                        <form method="POST" action="{% url 'auth' %}">
+                            {% csrf_token %}
+                            <input type="hidden" name="signup" value="true">
+
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">First Name</label>
+                                    <input type="text" name="first_name" class="form-control form-control-lg" placeholder="First Name" required>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Last Name</label>
+                                    <input type="text" name="last_name" class="form-control form-control-lg" placeholder="Last Name" required>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">Email Address</label>
+                                <input type="email" name="email" class="form-control form-control-lg" placeholder="Email Address" required>
+                            </div>
+
+                            <div class="mb-3 password-wrapper">
+                                <label class="form-label">Password</label>
+                                <div class="password-input-container">
+                                    <input type="password" name="password1" class="form-control form-control-lg password-field" placeholder="Password" required>
+                                    <button type="button" class="password-toggle" aria-label="Toggle password visibility">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                </div>
+                                <div class="form-text">
+                                    <small>Use at least 8 characters with a mix of letters, numbers & symbols.</small>
+                                </div>
+                            </div>
+
+                            <div class="mb-4 password-wrapper">
+                                <label class="form-label">Confirm Password</label>
+                                <div class="password-input-container">
+                                    <input type="password" name="password2" class="form-control form-control-lg password-field" placeholder="Confirm Password" required>
+                                    <button type="button" class="password-toggle" aria-label="Toggle password visibility">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <button type="submit" class="btn btn-primary w-100 py-2 fw-bold btn-lg">
+                                Create Account <i class="fas fa-rocket ms-2"></i>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+                <div class="text-center mt-4">
+                    <a href="{% url 'landing' %}" class="text-secondary text-decoration-none">
+                        <i class="fas fa-arrow-left me-2"></i>Back to Home
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Password visibility toggle
+        document.querySelectorAll('.password-toggle').forEach(toggle => {
+            toggle.addEventListener('click', function () {
+                const input = this.parentElement.querySelector('.password-field');
+                const icon = this.querySelector('i');
+                
+                if (input.type === 'password') {
+                    input.type = 'text';
+                    icon.classList.remove('fa-eye');
+                    icon.classList.add('fa-eye-slash');
+                    this.setAttribute('aria-label', 'Hide password');
+                } else {
+                    input.type = 'password';
+                    icon.classList.remove('fa-eye-slash');
+                    icon.classList.add('fa-eye');
+                    this.setAttribute('aria-label', 'Show password');
+                }
+                
+                input.focus();
+            });
+        });
+
+        // Add subtle animation when switching tabs
+        const tabButtons = document.querySelectorAll('[data-bs-toggle="tab"]');
+        tabButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                const target = document.querySelector(this.getAttribute('data-bs-target'));
+                if (target) {
+                    target.classList.add('tab-active');
+                    setTimeout(() => {
+                        target.classList.remove('tab-active');
+                    }, 300);
+                }
+            });
+        });
+    });
+</script>
+{% endblock %}

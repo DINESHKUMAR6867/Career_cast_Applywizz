@@ -1,0 +1,120 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>{% block title %}Reslink{% endblock %}</title>
+
+  <!-- Tailwind & Fonts -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"/>
+  
+  <!-- Custom CSS -->
+  <link rel="stylesheet" href="{% static 'css/main.css' %}">
+
+  <style>
+    body { font-family: "Inter", sans-serif; background:#f9fafb; }
+    .submenu { display: none; }
+    .submenu.open { display: block; }
+    .step-section { display: none; }
+    .step-section.active { display: block; }
+    /* .step-wrap { max-width: 600px; margin: 30px auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); } */
+    /* .stepper { display: flex; justify-content: space-between; margin-bottom: 20px; } */
+    /* .step { flex: 1; text-align: center; padding: 10px 0; border-bottom: 3px solid #ccc; color: #ccc; font-weight: bold; position: relative; } */
+    .step span { display: block; font-size: 0.8rem; font-weight: normal; margin-top: 5px; }
+    /* .step.done { border-color: #0C63E3; color: #0C63E3; } */
+    /* .step.active { border-color: #D8F950; color: #041635; } */
+    .panel { padding: 20px; }
+    .btn.blue { background-color: #0C63E3; color: white; padding: 10px 20px; border-radius: 6px; text-decoration: none; border: none; cursor: pointer; }
+    .btn.ghost { border: 1px solid #0C63E3; color: #0C63E3; padding: 8px 18px; border-radius: 6px; background: transparent; cursor: pointer; }
+    .right { text-align: right; margin-top: 20px; }
+    .panel input[type="text"], .panel input[type="file"], .panel textarea {
+      width: 100%; padding: 10px; margin-top: 10px;
+      border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box;
+    }
+    .panel h2 { font-size: 1.5rem; font-weight: bold; margin-bottom: 15px; }
+  </style>
+</head>
+
+<body class="flex min-h-screen bg-gray-50">
+
+  <!-- ✅ Sidebar -->
+  <aside class="w-60 bg-[#041635] text-white flex flex-col justify-between py-4">
+    <div>
+      <!-- Profile block -->
+      <div class="px-4 mb-4 flex items-center gap-2">
+        <div class="bg-[#0C63E3] p-2 rounded-md">
+          <i class="fa-regular fa-paper-plane"></i>
+        </div>
+        <div>
+          <div class="font-semibold">
+            {{ request.user.first_name|default:request.user.username }}
+          </div>
+          <div class="text-xs bg-[#3D4A63] px-2 py-[2px] rounded inline-block mt-1">
+            Job Seeker
+          </div>
+        </div>
+      </div>
+
+      <!-- Navigation -->
+      <nav>
+        <a href="{% url 'dashboard' %}" class="flex items-center px-4 py-2 bg-[#D8F950] text-[#041635] font-medium rounded-r-full">
+          <i class="fa-solid fa-house mr-2"></i> Dashboard
+        </a>
+        <a href="#" class="flex items-center px-4 py-2 mt-2 hover:bg-[#0C63E3] hover:text-white rounded-r-full transition">
+          <i class="fa-regular fa-folder mr-2"></i> Resources
+        </a>
+
+        <!-- Account submenu -->
+        <div>
+          <button id="account-toggle" class="flex items-center justify-between w-full px-4 py-2 mt-2 hover:bg-[#0C63E3] rounded-r-full">
+            <span><i class="fa-solid fa-gear mr-2"></i> Account settings</span>
+            <i class="fa-solid fa-chevron-down text-xs"></i>
+          </button>
+          <div id="account-submenu" class="submenu pl-8 text-sm">
+            <a href="#" class="block py-2 hover:text-[#D8F950]"><i class="fa-regular fa-user mr-2"></i> Profile</a>
+            <a href="#" class="block py-2 hover:text-[#D8F950]"><i class="fa-regular fa-credit-card mr-2"></i> Billing & Plan</a>
+            <a href="#" class="block py-2 hover:text-[#D8F950]"><i class="fa-solid fa-lock mr-2"></i> Password</a>
+          </div>
+        </div>
+      </nav>
+    </div>
+
+    <!-- Logout -->
+    <div class="px-4">
+      <button class="flex items-center gap-2 text-sm text-gray-300 hover:text-white" onclick="window.location.href='/accounts/logout/'">
+        <i class="fa-solid fa-right-from-bracket"></i> Log out
+      </button>
+    </div>
+  </aside>
+
+  <!-- ✅ Main Content -->
+  <main class="flex-1 p-6">
+    {% block content %}{% endblock %}
+  </main>
+
+  <script>
+    // Sidebar submenu toggle
+    document.getElementById('account-toggle')?.addEventListener('click', () => {
+      document.getElementById('account-submenu').classList.toggle('open');
+    });
+
+    // Step navigation (optional)
+    function showStep(stepId) {
+      document.querySelectorAll('.step-section').forEach(sec => sec.classList.remove('active'));
+      document.getElementById(stepId).classList.add('active');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    document.addEventListener('click', (e) => {
+      if (e.target.matches('.go-step2')) { e.preventDefault(); showStep('step2'); }
+      if (e.target.matches('.go-step3')) { e.preventDefault(); showStep('step3'); }
+      if (e.target.matches('.go-step5')) { e.preventDefault(); showStep('step5'); }
+      if (e.target.matches('.go-step6')) { e.preventDefault(); showStep('step6'); }
+      if (e.target.matches('.go-step1')) { e.preventDefault(); showStep('step1'); }
+    });
+  </script>
+</body>
+</html>

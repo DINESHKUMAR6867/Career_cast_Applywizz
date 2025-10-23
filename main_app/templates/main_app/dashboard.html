@@ -1,0 +1,807 @@
+{% extends 'main_app/base.html' %}
+{% load static %}
+
+{% block content %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>CareerCast Dashboard</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    /* Base Styles */
+    * { 
+      box-sizing: border-box; 
+      margin: 0; 
+      padding: 0; 
+    }
+    
+    body {
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background-color: #f8fafc;
+      color: #334155;
+      line-height: 1.6;
+      min-height: 100vh;
+      /* Add subtle side borders */
+      border-left: 1px solid #e2e8f0;
+      border-right: 1px solid #e2e8f0;
+    }
+
+    .container {
+      max-width: 100%;
+      margin: 0 auto;
+      padding: 0 1.5rem;
+    }
+
+    /* Header */
+    .dashboard-header {
+      background: white;
+      border-bottom: 1px solid #e2e8f0;
+      padding: 1.5rem 0;
+      margin-bottom: 2rem;
+      /* Ensure header fits within borders */
+      margin-left: -1px;
+      margin-right: -1px;
+      padding-left: 1.5rem;
+      padding-right: 1.5rem;
+    }
+
+    .header-content {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    .logo-section {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .logo {
+      width: 40px;
+      height: 40px;
+      background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-weight: bold;
+      font-size: 1.2rem;
+    }
+
+    .header-text h1 {
+      font-size: 1.75rem;
+      font-weight: 700;
+      color: #1e293b;
+      margin-bottom: 0.25rem;
+    }
+
+    .header-text p {
+      color: #64748b;
+      font-size: 0.9rem;
+    }
+
+    .user-actions {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .user-info {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.5rem 1rem;
+      background: #f1f5f9;
+      border-radius: 8px;
+    }
+
+    .user-avatar {
+      width: 36px;
+      height: 36px;
+      background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-weight: 600;
+      font-size: 0.9rem;
+    }
+
+    .user-details {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .user-name {
+      font-weight: 600;
+      color: #1e293b;
+      font-size: 0.9rem;
+    }
+
+    .user-role {
+      color: #64748b;
+      font-size: 0.8rem;
+    }
+
+    .logout-btn {
+      background: transparent;
+      color: #64748b;
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+      padding: 0.5rem 1rem;
+      font-size: 0.85rem;
+      transition: all 0.2s;
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .logout-btn:hover {
+      background: #f8fafc;
+      color: #475569;
+    }
+
+    /* Main Content */
+    .dashboard-content {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 2rem;
+      margin-bottom: 3rem;
+      max-width: 1400px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    /* Stats Grid */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1.5rem;
+      margin-bottom: 2rem;
+    }
+
+    .stat-card {
+      background: white;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 1.5rem;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .stat-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    }
+
+    .stat-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1rem;
+    }
+
+    .stat-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.25rem;
+    }
+
+    .stat-icon.primary {
+      background: #eff6ff;
+      color: #3b82f6;
+    }
+
+    .stat-icon.success {
+      background: #f0fdf4;
+      color: #22c55e;
+    }
+
+    .stat-icon.warning {
+      background: #fffbeb;
+      color: #f59e0b;
+    }
+
+    .stat-icon.info {
+      background: #f0f9ff;
+      color: #0ea5e9;
+    }
+
+    .stat-trend {
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
+      font-size: 0.8rem;
+      font-weight: 500;
+    }
+
+    .trend-up {
+      color: #22c55e;
+    }
+
+    .trend-down {
+      color: #ef4444;
+    }
+
+    .stat-value {
+      font-size: 2rem;
+      font-weight: 700;
+      color: #1e293b;
+      margin-bottom: 0.25rem;
+    }
+
+    .stat-label {
+      color: #64748b;
+      font-size: 0.9rem;
+    }
+
+    /* Career Casts Section */
+    .casts-section {
+      background: white;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    }
+
+    .section-header {
+      padding: 1.5rem;
+      border-bottom: 1px solid #e2e8f0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .section-title {
+      font-size: 1.25rem;
+      font-weight: 600;
+      color: #1e293b;
+    }
+
+    .section-subtitle {
+      color: #64748b;
+      font-size: 0.9rem;
+      margin-top: 0.25rem;
+    }
+
+    .new-cast-btn {
+      background: #3b82f6;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      padding: 0.75rem 1.5rem;
+      font-weight: 600;
+      font-size: 0.9rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      transition: background 0.2s;
+      cursor: pointer;
+      text-decoration: none;
+    }
+
+    .new-cast-btn:hover {
+      background: #2563eb;
+    }
+
+    /* Table */
+    .table-container {
+      overflow-x: auto;
+    }
+
+    .casts-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    .casts-table th {
+      background: #f8fafc;
+      color: #475569;
+      text-align: left;
+      padding: 1rem 1.5rem;
+      font-weight: 600;
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      border-bottom: 1px solid #e2e8f0;
+    }
+
+    .casts-table td {
+      padding: 1.25rem 1.5rem;
+      border-bottom: 1px solid #f1f5f9;
+    }
+
+    .casts-table tr:last-child td {
+      border-bottom: none;
+    }
+
+    .casts-table tr:hover {
+      background: #f8fafc;
+    }
+
+    .job-title {
+      font-weight: 600;
+      color: #1e293b;
+      margin-bottom: 0.25rem;
+    }
+
+    .job-date {
+      color: #64748b;
+      font-size: 0.85rem;
+    }
+
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 0.25rem 0.75rem;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      font-weight: 500;
+    }
+
+    .status-complete {
+      background: #f0fdf4;
+      color: #16a34a;
+    }
+
+    .status-draft {
+      background: #fffbeb;
+      color: #d97706;
+    }
+
+    .status-recording {
+      background: #eff6ff;
+      color: #2563eb;
+    }
+
+    .action-buttons {
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    .btn {
+      padding: 0.5rem 1rem;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      font-weight: 500;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      transition: all 0.2s;
+      border: none;
+      cursor: pointer;
+    }
+
+    .btn-primary {
+      background: #3b82f6;
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background: #2563eb;
+    }
+
+    .btn-outline {
+      background: transparent;
+      color: #64748b;
+      border: 1px solid #e2e8f0;
+    }
+
+    .btn-outline:hover {
+      background: #f8fafc;
+      color: #475569;
+    }
+
+    /* Empty State */
+    .empty-state {
+      padding: 3rem 2rem;
+      text-align: center;
+    }
+
+    .empty-icon {
+      font-size: 3rem;
+      color: #cbd5e1;
+      margin-bottom: 1rem;
+    }
+
+    .empty-title {
+      font-size: 1.25rem;
+      font-weight: 600;
+      color: #475569;
+      margin-bottom: 0.5rem;
+    }
+
+    .empty-desc {
+      color: #64748b;
+      margin-bottom: 1.5rem;
+    }
+
+    /* Responsive */
+    @media (max-width: 1200px) {
+      .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    @media (max-width: 768px) {
+      .container {
+        padding: 0 1rem;
+      }
+      
+      .dashboard-header {
+        padding-left: 1rem;
+        padding-right: 1rem;
+      }
+      
+      .stats-grid {
+        grid-template-columns: 1fr;
+      }
+      
+      .header-content {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+      }
+      
+      .user-actions {
+        width: 100%;
+        justify-content: space-between;
+      }
+      
+      .section-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+      }
+      
+      .action-buttons {
+        flex-direction: column;
+        width: 100%;
+      }
+      
+      .btn {
+        width: 100%;
+        justify-content: center;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .casts-table {
+        font-size: 0.8rem;
+      }
+      
+      .casts-table th,
+      .casts-table td {
+        padding: 0.75rem 0.5rem;
+      }
+    }
+
+    /* Messages */
+    .messages-container {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      z-index: 1000;
+      max-width: 400px;
+    }
+
+    .alert {
+      padding: 1rem 1.25rem;
+      border-radius: 8px;
+      margin-bottom: 0.75rem;
+      border: 1px solid;
+      background: white;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .alert-success {
+      border-color: #bbf7d0;
+      color: #166534;
+    }
+
+    .alert-error {
+      border-color: #fecaca;
+      color: #dc2626;
+    }
+
+    .alert-info {
+      border-color: #bfdbfe;
+      color: #1e40af;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Messages -->
+  {% if messages %}
+  <div class="messages-container">
+    {% for message in messages %}
+    <div class="alert alert-{{ message.tags }}">
+      <i class="fas fa-{% if message.tags == 'success' %}check-circle{% elif message.tags == 'error' %}exclamation-circle{% else %}info-circle{% endif %}"></i>
+      {{ message }}
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <!-- Header -->
+  <header class="dashboard-header">
+    <div class="header-content">
+      <div class="logo-section">
+        <div class="logo">CC</div>
+        <div class="header-text">
+          <h1>CareerCast Dashboard</h1>
+          <p>Manage your professional video resumes</p>
+        </div>
+      </div>
+      
+      <div class="user-actions">
+        <div class="user-info">
+          <div class="user-avatar">
+            {% if user.first_name and user.last_name %}
+              {{ user.first_name|first }}{{ user.last_name|first }}
+            {% else %}
+              {% if user.username %}
+                {{ user.username|first|upper }}
+              {% else %}
+                DU
+              {% endif %}
+            {% endif %}
+          </div>
+          <div class="user-details">
+            <div class="user-name">
+              {% if user.first_name and user.last_name %}
+                {{ user.first_name }} {{ user.last_name }}
+              {% else %}
+                {% if user.username %}
+                  {{ user.username }}
+                {% else %}
+                  Demo User
+                {% endif %}
+              {% endif %}
+            </div>
+            <div class="user-role">Professional Account</div>
+          </div>
+        </div>
+        <a href="{% url 'logout' %}" class="logout-btn">
+          <i class="fas fa-sign-out-alt"></i> Logout
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <div class="container">
+
+    <!-- Stats Grid -->
+    <!-- <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-header">
+          <div class="stat-icon primary">
+            <i class="fas fa-video"></i>
+          </div>
+          <div class="stat-trend trend-up">
+            <i class="fas fa-arrow-up"></i>
+            <span>12%</span>
+          </div>
+        </div>
+        <div class="stat-value">{{ career_casts|length }}</div>
+        <div class="stat-label">Total CareerCasts</div>
+      </div>
+      
+      <div class="stat-card">
+        <div class="stat-header">
+          <div class="stat-icon success">
+            <i class="fas fa-eye"></i>
+          </div>
+          <div class="stat-trend trend-up">
+            <i class="fas fa-arrow-up"></i>
+            <span>8%</span>
+          </div>
+        </div>
+        <div class="stat-value">
+          {% with total_views=0 %}
+            {% for cast in career_casts %}
+              {% if cast.video_file %}
+                {% comment %} You can add view count logic here {% endcomment %}
+              {% endif %}
+            {% endfor %}
+            {{ total_views|default:"0" }}
+          {% endwith %}
+        </div>
+        <div class="stat-label">Total Views</div>
+      </div>
+      
+      <div class="stat-card">
+        <div class="stat-header">
+          <div class="stat-icon warning">
+            <i class="fas fa-paper-plane"></i>
+          </div>
+          <div class="stat-trend trend-up">
+            <i class="fas fa-arrow-up"></i>
+            <span>15%</span>
+          </div>
+        </div>
+        <div class="stat-value">
+          {% with completed_casts=0 %}
+            {% for cast in career_casts %}
+              {% if cast.video_file %}
+                {% widthratio completed_casts|add:1 completed_casts 1 as completed_casts %}
+              {% endif %}
+            {% endfor %}
+            {{ completed_casts|default:"0" }}
+          {% endwith %}
+        </div>
+        <div class="stat-label">Applications Sent</div>
+      </div>
+      
+      <div class="stat-card">
+        <div class="stat-header">
+          <div class="stat-icon info">
+            <i class="fas fa-check-circle"></i>
+          </div>
+          <div class="stat-trend trend-up">
+            <i class="fas fa-arrow-up"></i>
+            <span>5%</span>
+          </div>
+        </div>
+        <div class="stat-value">
+          {% with published_casts=career_casts|length %}
+            {{ published_casts }}
+          {% endwith %}
+        </div>
+        <div class="stat-label">Published</div>
+      </div>
+    </div> -->
+
+    <div class="dashboard-content">
+      <!-- Career Casts Section -->
+      <div class="casts-section">
+        <div class="section-header">
+          <div>
+            <div class="section-title">Your CareerCasts</div>
+            <div class="section-subtitle">Manage and track your video resumes</div>
+          </div>
+          <a href="{% url 'create_cast_step1' %}" class="new-cast-btn" id="newCastBtn">
+            <i class="fas fa-plus"></i> New CareerCast
+          </a>
+        </div>
+        
+        <div class="table-container">
+          {% if career_casts %}
+            <table class="casts-table">
+              <thead>
+                <tr>
+                  <th>Job Title</th>
+                  <th>Status</th>
+                  <th>Resume</th>
+                  <th>Video</th>
+                  <th>Created</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+  {% for cast in career_casts %}
+  <tr>
+    <!-- Job Title & Created Date -->
+    <td>
+      <div class="job-title">{{ cast.job_title }}</div>
+      <div class="job-date">{{ cast.created_at|date:"M d, Y" }}</div>
+    </td>
+
+    <!-- Status -->
+    <td>
+      {% if cast.video_file %}
+        <span class="status-badge status-complete">
+          <i class="fas fa-check-circle"></i> Complete
+        </span>
+      {% else %}
+        <span class="status-badge status-draft">
+          <i class="fas fa-clock"></i> In Progress
+        </span>
+      {% endif %}
+    </td>
+
+    <!-- Resume Column -->
+    <td>
+      {% if cast.resume_file %}
+        <a href="{{ cast.resume_file.url }}" class="btn btn-outline" target="_blank">
+          <i class="fas fa-file-pdf"></i> View
+        </a>
+      {% else %}
+        <button class="btn btn-outline" disabled style="opacity: 0.5; cursor: not-allowed;">
+          <i class="fas fa-file-pdf"></i> View
+        </button>
+      {% endif %}
+    </td>
+
+    <!-- Video Column -->
+    <td>
+      {% if cast.video_file %}
+        <a href="{{ cast.video_file.url }}" class="btn btn-outline" target="_blank">
+          <i class="fas fa-play"></i> Play
+        </a>
+      {% else %}
+        <span style="color: #94a3b8;">No video</span>
+      {% endif %}
+    </td>
+
+    <!-- Created Time -->
+    <td>{{ cast.created_at|timesince }} ago</td>
+
+    <!-- Actions -->
+    <td>
+      <div class="action-buttons">
+        {% if cast.video_file %}
+          <a href="{% url 'final_result' cast.id %}" class="btn btn-primary">
+            <i class="fas fa-eye"></i> View
+          </a>
+        {% else %}
+          <button class="btn btn-primary" disabled style="opacity: 0.5; cursor: not-allowed;">
+            <i class="fas fa-eye"></i> View
+          </button>
+        {% endif %}
+
+        <button class="btn btn-outline" onclick="reRecordVideo('{{ cast.id }}')">
+          <i class="fas fa-redo"></i> Re-record
+        </button>
+      </div>
+    </td>
+  </tr>
+  {% endfor %}
+</tbody>
+
+            </table>
+          {% else %}
+            <div class="empty-state">
+              <div class="empty-icon">
+                <i class="fas fa-video"></i>
+              </div>
+              <div class="empty-title">No CareerCasts Yet</div>
+              <div class="empty-desc">Create your first professional video resume to get started</div>
+              <a href="{% url 'create_cast_step1' %}" class="new-cast-btn" id="createFirstCastBtn">
+                <i class="fas fa-plus"></i> Create Your First Cast
+              </a>
+            </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+  <script>
+    // Action functions
+    function reRecordVideo(castId) {
+      if (confirm('Are you sure you want to re-record this video? This will replace the existing video.')) {
+        window.location.href = "{% url 'create_cast_step3' %}?cast_id=" + castId;
+      }
+    }
+
+    // Auto-hide messages after 5 seconds
+    setTimeout(() => {
+      const messages = document.querySelectorAll('.alert');
+      messages.forEach(message => {
+        message.style.opacity = '0';
+        message.style.transition = 'opacity 0.5s ease';
+        setTimeout(() => message.remove(), 500);
+      });
+    }, 5000);
+  </script>
+
+</body>
+</html>
+{% endblock %}

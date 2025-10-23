@@ -1,0 +1,365 @@
+{% extends 'main_app/base.html' %}
+
+{% block content %}
+<style>
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    .form-container {
+        background-color: white;
+        border-radius: 12px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        width: 100%;
+        max-width: 800px;
+        padding: 40px;
+        margin: 0 auto;
+    }
+
+    .step-indicator {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 30px;
+        position: relative;
+    }
+
+    .step-indicator::before {
+        content: '';
+        position: absolute;
+        top: 15px;
+        left: 0;
+        right: 0;
+        height: 2px;
+        background-color: #e0e0e0;
+        z-index: 1;
+    }
+
+    .step {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        position: relative;
+        z-index: 2;
+    }
+
+    .step-circle {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        background-color: #e0e0e0;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        margin-bottom: 8px;
+        font-weight: 600;
+        color: #888;
+    }
+
+    .step.active .step-circle {
+        background-color: #4a6cf7;
+        color: white;
+    }
+
+    .step-label {
+        font-size: 12px;
+        color: #888;
+        font-weight: 500;
+    }
+
+    .step.active .step-label {
+        color: #4a6cf7;
+    }
+
+    h1 {
+        font-size: 24px;
+        margin-bottom: 30px;
+        color: #2d3748;
+        font-weight: 600;
+        text-align: center;
+    }
+
+    .content-row {
+        display: flex;
+        gap: 30px;
+        margin-bottom: 30px;
+    }
+
+    .left-column, .right-column {
+        flex: 1;
+    }
+
+    .section-title {
+        font-size: 18px;
+        font-weight: 600;
+        color: #2d3748;
+        margin-bottom: 16px;
+        display: flex;
+        align-items: center;
+    }
+
+    .section-title i {
+        margin-right: 8px;
+        color: #4a6cf7;
+    }
+
+    .recording-preview {
+        background-color: #f8fafc;
+        border-radius: 12px;
+        padding: 20px;
+        text-align: center;
+        margin-bottom: 20px;
+        border: 1px solid #e2e8f0;
+    }
+
+    .camera-placeholder {
+        width: 100%;
+        height: 200px;
+        background-color: #e2e8f0;
+        border-radius: 8px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        margin-bottom: 16px;
+        color: #718096;
+    }
+
+    .teleprompter-box {
+        background-color: #2d3748;
+        color: white;
+        border-radius: 12px;
+        padding: 20px;
+        height: 300px;
+        overflow-y: auto;
+        margin-bottom: 15px;
+        border: 1px solid #4a5568;
+    }
+
+    .teleprompter-text {
+        line-height: 1.6;
+        font-size: 16px;
+        white-space: pre-wrap;
+    }
+
+    .btn {
+        padding: 12px 24px;
+        border-radius: 8px;
+        font-size: 16px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: background-color 0.2s, transform 0.1s;
+        border: none;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .btn:active {
+        transform: translateY(1px);
+    }
+
+    .btn-primary {
+        background-color: #4a6cf7;
+        color: white;
+        width: 100%;
+    }
+
+    .btn-primary:hover {
+        background-color: #3a5ce5;
+    }
+
+    .btn-secondary {
+        background-color: #e2e8f0;
+        color: #4a5568;
+        width: 100%;
+    }
+
+    .btn-secondary:hover {
+        background-color: #cbd5e0;
+    }
+
+    .button-group {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 40px;
+    }
+
+    .btn-back {
+        background-color: transparent;
+        border: 1px solid #e2e8f0;
+        color: #4a5568;
+    }
+
+    .btn-back:hover {
+        background-color: #f7fafc;
+    }
+
+    .btn-next {
+        background-color: #4a6cf7;
+        border: none;
+        color: white;
+    }
+
+    .btn-next:hover {
+        background-color: #3a5ce5;
+    }
+
+    .btn-next:disabled {
+        background-color: #a0aec0;
+        cursor: not-allowed;
+    }
+
+    .icon {
+        margin-right: 8px;
+    }
+</style>
+
+<div class="form-container">
+    <div class="step-indicator">
+        <div class="step">
+            <div class="step-circle">1</div>
+            <div class="step-label">Job Title</div>
+        </div>
+        <div class="step">
+            <div class="step-circle">2</div>
+            <div class="step-label">Upload Resume</div>
+        </div>
+        <div class="step active">
+            <div class="step-circle">3</div>
+            <div class="step-label">Record Video</div>
+        </div>
+    </div>
+
+    <h1>Record Your CareerCast Video</h1>
+
+    <div class="content-row">
+        <div class="left-column">
+            <div class="section-title">
+                <i>🎥</i> Video Recording
+            </div>
+
+            <div class="recording-preview">
+                <div class="camera-placeholder">
+                    <div>
+                        <div style="font-size: 48px; margin-bottom: 10px;">📷</div>
+                        <p>Camera preview will appear here</p>
+                    </div>
+                </div>
+
+                <button class="btn btn-primary" id="start-recording">
+                    <span class="icon">⏺️</span> Start Recording
+                </button>
+
+                <p style="margin-top: 12px; font-size: 14px; color: #718096;">
+                    Click to open the recording studio with teleprompter
+                </p>
+            </div>
+        </div>
+
+        <div class="right-column">
+            <div class="section-title">
+                <i>📜</i> AI Teleprompter
+            </div>
+
+            <div class="teleprompter-box">
+                <div class="teleprompter-text" id="teleprompter-text">
+                    {{ tele|default:"Hello! I'm [Your Name], and I'm excited to introduce myself for the position at your company." }}
+                </div>
+            </div>
+
+            <!-- ✏️ Rewrite Button -->
+            <button type="button" class="btn btn-secondary" id="rewrite-btn">
+                ✏️ Rewrite Script
+            </button>
+        </div>
+    </div>
+
+    <div class="button-group">
+        <button type="button" class="btn btn-back" id="btn-back">Back</button>
+        <button type="button" class="btn btn-next" id="btn-next" disabled>Finish & Save CareerCast</button>
+    </div>
+</div>
+
+<script>
+    const teleprompterText = document.getElementById('teleprompter-text');
+    const rewriteBtn = document.getElementById('rewrite-btn');
+    const startRecordingBtn = document.getElementById('start-recording');
+    const nextButton = document.getElementById('btn-next');
+    const backButton = document.getElementById('btn-back');
+    const careerCastId = "{{ career_cast.id }}";
+
+    // ✅ Get CSRF token
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+        const savedText = localStorage.getItem('teleprompterText');
+        const djangoText = "{{ tele|escapejs }}";
+
+        if (djangoText && djangoText.trim() !== '') {
+            teleprompterText.innerText = djangoText;
+            localStorage.setItem('teleprompterText', djangoText);
+        } else if (savedText && savedText.trim() !== '') {
+            teleprompterText.innerText = savedText;
+        }
+    });
+
+    // ✏️ Rewrite Script
+    rewriteBtn.addEventListener('click', async function () {
+        rewriteBtn.disabled = true;
+        rewriteBtn.innerText = 'Rewriting... ✨';
+
+        const response = await fetch(`/career-cast/${careerCastId}/rewrite-teleprompter/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken'),
+                'Content-Type': 'application/json'
+            }
+        });
+
+        if (response.ok) {
+            const data = await response.json();
+            if (data.success) {
+                teleprompterText.innerText = data.teleprompter_text;
+                localStorage.setItem('teleprompterText', data.teleprompter_text);
+            } else {
+                alert(`Failed to rewrite script: ${data.error}`);
+            }
+        } else {
+            alert('Failed to rewrite script. Please try again.');
+        }
+
+        rewriteBtn.disabled = false;
+        rewriteBtn.innerText = '✏️ Rewrite Script';
+    });
+
+    startRecordingBtn.addEventListener('click', function () {
+        const text = teleprompterText.innerText;
+        localStorage.setItem('teleprompterText', text);
+        window.location.href = "{% url 'record' %}";
+    });
+
+    nextButton.addEventListener('click', function () {
+        alert('CareerCast completed! You will be redirected to the final page.');
+        window.location.href = `/final-result/${careerCastId}/`;
+    });
+
+    backButton.addEventListener('click', function () {
+        window.location.href = "{% url 'create_cast_step2' %}";
+    });
+</script>
+{% endblock %}

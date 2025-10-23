@@ -1,0 +1,44 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# C extensions
+*.so
+
+# Distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Environments
+dinesh/
+venv/
+.venv/
+env/
+.env
+
+# Django stuff
+db.sqlite3
+db.sqlite3-journal
+*.log
+
+# Media files - These should be served from a cloud storage like S3 in production
+/media/
+
+# Vercel
+.vercel/

@@ -1,0 +1,21 @@
+body{font-family:Inter,system-ui,Segoe UI,Roboto,Arial,sans-serif;margin:0;background:#f7f9fc;color:#1e293b}
+.container{max-width:960px;margin:0 auto;padding:20px}
+h1{font-size:24px;font-weight:700;margin:0 0 16px}
+h2{font-size:18px;margin:0 0 12px}
+.panel{background:#fff;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,.05);padding:20px}
+.columns{display:flex;gap:24px}
+.col{flex:1}
+.step-wrap{max-width:900px;margin:0 auto}
+.stepper{display:flex;justify-content:space-between;margin:20px 0 40px;position:relative}
+.stepper:before{content:"";position:absolute;top:50%;left:0;right:0;height:2px;background:#d0d7e1;transform:translateY(-50%);z-index:0}
+.step{background:#fff;color:#5a6473;padding:8px 14px;border-radius:20px;font-size:14px;font-weight:500;display:flex;align-items:center;gap:6px;z-index:1;border:2px solid #d0d7e1;position:relative}
+.step.active{background:#0066ff;color:#fff;border-color:#0066ff}
+.step.done{background:#22c55e;color:#fff;border-color:#22c55e}
+.step span{font-size:13px}
+.btn{display:inline-block;padding:8px 16px;border-radius:6px;font-weight:500;text-decoration:none;cursor:pointer;border:none}
+.btn.blue{background:#0066ff;color:#fff}
+.btn.ghost{background:transparent;border:1px solid #cbd5e1;color:#1e293b}
+.right{text-align:right;margin-top:12px}
+.muted{color:#64748b}
+input[type="text"], input[type="file"], textarea{width:100%;border:1px solid #cbd5e1;border-radius:8px;padding:10px}
+textarea{min-height:200px;resize:vertical}
